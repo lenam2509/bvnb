@@ -17,9 +17,10 @@
     .main_container {
         display: flex;
         flex-direction: column;
-        justify-content: center;
+        /* justify-content: center; */
         align-items: center;
-        height: 100vh;
+        min-height: 100vh;
+        padding: 1rem 0;
     }
 
     #form_contact {
@@ -60,28 +61,61 @@
         color: white;
         cursor: pointer;
     }
+
+    #form_contact textarea {
+        padding: 5px;
+        font-size: 1.5rem;
+        outline: none;
+        border-radius: 0.5rem;
+        border: 2px solid #ccc;
+    }
+
+    .image_result {
+        display: flex;
+        flex-direction: column;
+
+    }
 </style>
 
 <body>
     <main class="main_container">
-        <h1 style="text-transform: uppercase;">Gửi thông tin check mail</h1>
+        <h1 style="text-transform: uppercase;">cung cấp thông tin y tế bằng văn bản</h1>
         <form onsubmit="onSubmit()" id="form_contact">
             <div class="form_control">
                 <label for="fullname">Họ tên:</label>
                 <input type="text" id="fullname" name="fullname" placeholder="họ và tên" required>
             </div>
+
+            <div class="form_control">
+                <label for="ngaysinh">Ngày sinh:</label>
+                <input type="date" id="ngaysinh">
+            </div>
+            <div class="form_control">
+                <label for="ma_benh_nhan">Mã bệnh nhân:</label>
+                <input type="number" id="ma_benh_nhan" name="ma_benh_nhan">
+            </div>
+
             <div class="form_control">
                 <label for="phone">Số điện thoại:</label>
                 <input type="number" id="phone" name="phone" placeholder="0xxxxxx" required>
+            </div>
+            <div class="form_control">
+                <label for="noidung">Nội dung cung cấp:</label>
+                <textarea name="noidung" id="noidung" cols="10"></textarea>
             </div>
             <div class="form_control">
                 <label for="cmnd">Căn cước công dân:</label>
                 <input type="number" id="cmnd" name="cmnd" placeholder="xxxxxxxx" required>
             </div>
             <div class="form_control">
-                <label for="fileInput">Hình ảnh căn cước công dân 2 mặt:</label>
+                <label for="fileInput">Hình ảnh căn cước công dân mặt trước:</label>
                 <input type='file' accept="image/*,video/*,.pdf,.txt,.html,.js,.css,.odt,.odp,.odf,.docx"
-                    name='fichiersSupp' id="fileInput" multiple onchange="convertFile()" />
+                    name='fichiersSupp' id="fileInput1" onchange="handleImage()" />
+            </div>
+            <div class="form_control">
+                <label for="fileInput">Hình ảnh căn cước công dân mặt sau:</label>
+                <input type='file' accept="image/*,video/*,.pdf,.txt,.html,.js,.css,.odt,.odp,.odf,.docx"
+                    name='fichiersSupp' id="fileInput2" onchange="handleImage()" />
             </div>
             <div id="image_result"></div>
             <button type="submit" id="btn_submit">Gửi</button>
@@ -95,55 +129,80 @@
 
         let allConvertedFiles = [];
 
-        function convertFile() {
-            var reader;
-            var dataUri;
-            var file;
-            var files = document.getElementById('fileInput').files;
+        function convertToBase64(file) {
+            var reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = function () {
+                allConvertedFiles.push({
+                    name: file.name,
+                    data: reader.result
+                });
+                console.log(allConvertedFiles);
+            };
+            reader.onerror = function (error) {
+                console.log('Error: ', error);
+            };
+        }
+
+        function handleImage() {
+            var fileInput1 = document.getElementById('fileInput1').files[0]
+            var fileInput2 = document.getElementById('fileInput2').files[0]
             var image_result = document.getElementById('image_result');
-            image_result.innerHTML = '';
-            for (var i = 0; i < files.length; i++) {
-                file = files[i];
-                if (file.type.match('image.*')) {
-                    reader = new FileReader();
-                    reader.onload = function (e) {
-                        dataUri = e.target.result;
-                        var img = new Image();
-                        img.src = dataUri;
-                        img.width = 100;
-                        img.height = 100;
-                        image_result.appendChild(img);
-                        allConvertedFiles.push({
-                            name: file.name,
-                            data: dataUri
-                        });
-                    };
-                    reader.readAsDataURL(file);
-                } else {
-                    allConvertedFiles.push({
-                        name: file.name,
-                        data: file
-                    });
+
+            console.log(
+                fileInput1,
+                fileInput2
+            )
+
+            if (fileInput1 && fileInput2) {
+                var reader1 = new FileReader();
+                var reader2 = new FileReader();
+
+                reader1.onload = function (e) {
+                    var img = new Image();
+                    img.src = e.target.result;
+                    img.width = 300
+                    img.height = 200
+                    image_result.appendChild(img);
                 }
+                reader2.onload = function (e) {
+                    var img = new Image();
+                    img.src = e.target.result;
+                    img.width = 300
+                    img.height = 200
+                    image_result.appendChild(img);
+                }
+
+                reader1.readAsDataURL(fileInput1);
+                reader2.readAsDataURL(fileInput2);
+
+                convertToBase64(fileInput1);
+                convertToBase64(fileInput2);
             }
 
-            console.log(allConvertedFiles)
+        }
 
-        };
 
         function onSubmit() {
             event.preventDefault();
             let fullname = document.getElementById('fullname').value;
+            let ngaysinh = document.getElementById('ngaysinh').value;
+            let ma_benh_nhan = document.getElementById('ma_benh_nhan').value;
+            let noidung = document.getElementById('noidung').value;
             let phone = document.getElementById('phone').value;
             let cmnd = document.getElementById('cmnd').value;
             let btn_submit = document.getElementById('btn_submit');
             // let image = document.getElementById('image').files[0];
-
+            console.log(ngaysinh);
             const body = `
             <h1>Thông tin người dùng</h1>
             <h2>Họ tên: ${fullname}</h2>
+            <h2>Ngày sinh: ${ngaysinh}</h2>
+            <h2>Mã bệnh nhân: ${ma_benh_nhan}</h2>
             <h2>Số điện thoại: ${phone}</h2>
             <h2>Căn cước công dân: ${cmnd}</h2>
+            <h2>Nội dung cung cấp: ${noidung}</h2>
+
            
             `;
 
@@ -157,7 +216,7 @@
                 Password: "5D0F4CAEE88BCB4C71E6958CE183B40B6F6D",
                 To: 'hosobvnb@gmail.com',
                 From: "hosobvnb@gmail.com",
-                Subject: "This is the subject",
+                Subject: " Cung cấp thông tin y tế bằng văn bản",
                 Attachments: allConvertedFiles,
                 Body: body
             }).then((message) => {
